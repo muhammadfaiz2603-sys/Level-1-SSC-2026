@@ -64,7 +64,7 @@ def process_lob_data(df):
 # COLUMN 1: SIDEBAR
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    st.header("Dashboard Navigation")
+    st.header("SSC 2026 Dashboard")
     st.write("Select the dataset to view:")
     
     # Radio button to switch views
