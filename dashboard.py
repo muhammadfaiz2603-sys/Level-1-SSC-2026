@@ -74,7 +74,7 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    st.info("Data source: Level 1.xlsx")
+    st.write("Switch Training Department")
 
 # -----------------------------------------------------------------------------
 # COLUMN 2: MAIN AREA
