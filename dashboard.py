@@ -64,7 +64,7 @@ def process_lob_data(df):
 # COLUMN 1: SIDEBAR
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    st.image("Main Banner.png", use_container_width=True)
+    st.image("Main Banner.png")
     st.header("SSC 2026 Dashboard : Explorer")
     st.write("Select the dataset to view:")
     
