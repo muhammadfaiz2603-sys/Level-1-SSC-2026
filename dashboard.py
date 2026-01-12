@@ -74,7 +74,7 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    st.write("Switch Training Department")
+    st.write("© 2026 Switch Staff Challenge | Insight Team")
 
 # -----------------------------------------------------------------------------
 # COLUMN 2: MAIN AREA
