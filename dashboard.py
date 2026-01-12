@@ -68,7 +68,7 @@ with st.sidebar:
     st.write("Select the dataset to view:")
     
     # Radio button to switch views
-    view_selection = st.radio(
+    view_selection = st.selectbox(
         "Dataset:",
         ["Regional Performance", "Outlet Performance", "LOB Comparison"]
     )
