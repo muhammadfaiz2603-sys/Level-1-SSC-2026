@@ -298,5 +298,22 @@ if chart_fig:
 
 st.markdown("---")
 
+# ROW 3: TABLE
+st.subheader("3. Data Table")
+
+display_df = active_df.copy()
+
+# If viewing outlets, show the filtered data in the table too
+if view_selection == "Outlet Performance" and 'filtered_df' in locals():
+    display_df = filtered_df.copy()
+
+if 'Pass' in display_df.columns and 'Fail' in display_df.columns:
+    display_df['Calculated Total'] = display_df['Pass'] + display_df['Fail']
+    display_df['Pass Rate (%)'] = (display_df['Pass'] / display_df['Calculated Total'] * 100).round(1)
+    
+    st.dataframe(
+        display_df.style.background_gradient(cmap='RdYlGn', subset=['Pass Rate (%)'], vmin=0, vmax=100),
+        use_container_width=True
+    )
 else:
     st.dataframe(display_df, use_container_width=True)
