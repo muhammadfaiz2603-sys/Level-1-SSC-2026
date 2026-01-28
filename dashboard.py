@@ -8,7 +8,7 @@ import io
 # -----------------------------------------------------------------------------
 st.set_page_config(page_title="SSC 2026 Dashboard", layout="wide")
 
-# Custom CSS
+# Custom CSS for styling metrics
 st.markdown("""
 <style>
     div[data-testid="metric-container"] {
@@ -21,10 +21,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. DATA EMBEDDING
+# 2. DATA EMBEDDING (Updated with your new files)
 # -----------------------------------------------------------------------------
 
-# --- REGIONAL SUMMARY ---
+# --- 1. REGIONAL SUMMARY ---
 csv_regional = """Region,Pass,Fail,Total Headcount
 Central,48,84,132
 Northern,64,64,128
@@ -34,7 +34,7 @@ Sabah,23,42,65
 Sarawak ,33,27,60
 Total,226,307,533"""
 
-# --- LOB SUMMARY ---
+# --- 2. LOB SUMMARY ---
 csv_lob = """LOB,Central,Northern,Southern,East Coast,Sabah,Sarawak,Total
 Apple Watch & iPhone (Pass),48,0,33,25,23,33,162
 Apple Watch & iPhone (Fail),84,0,70,20,43,27,244
@@ -43,7 +43,8 @@ iPad (Fail),0,0,0,0,0,0,0
 Mac (Pass),0,0,0,0,0,0,0
 Mac (Fail),0,0,0,0,0,0,0"""
 
-# --- INDIVIDUAL OUTLET DATA (By Region) ---
+# --- 3. OUTLET DATA (Separate files for each region) ---
+
 csv_central = """Outlet,Pass,Fail,Total Crew
 AP,1,4,5
 EV,2,3,5
