@@ -8,7 +8,7 @@ import io
 # -----------------------------------------------------------------------------
 st.set_page_config(page_title="SSC 2026 Dashboard", layout="wide")
 
-# Custom CSS to style the metric cards
+# Custom CSS
 st.markdown("""
 <style>
     div[data-testid="metric-container"] {
@@ -21,11 +21,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. DATA EMBEDDING (Raw Data from your Excel files)
+# 2. DATA EMBEDDING
 # -----------------------------------------------------------------------------
 
-# FILE 1: REGIONAL PERFORMANCE
-csv_regional_raw = """Region,Pass,Fail,Total Headcount
+# --- REGIONAL SUMMARY ---
+csv_regional = """Region,Pass,Fail,Total Headcount
 Central,48,84,132
 Northern,64,64,128
 Southern,33,70,103
@@ -34,8 +34,8 @@ Sabah,23,42,65
 Sarawak ,33,27,60
 Total,226,307,533"""
 
-# FILE 2: LOB COMPARISON
-csv_lob_raw = """LOB,Central,Northern,Southern,East Coast,Sabah,Sarawak,Total
+# --- LOB SUMMARY ---
+csv_lob = """LOB,Central,Northern,Southern,East Coast,Sabah,Sarawak,Total
 Apple Watch & iPhone (Pass),48,0,33,25,23,33,162
 Apple Watch & iPhone (Fail),84,0,70,20,43,27,244
 iPad (Pass),0,0,0,0,0,0,0
@@ -43,8 +43,8 @@ iPad (Fail),0,0,0,0,0,0,0
 Mac (Pass),0,0,0,0,0,0,0
 Mac (Fail),0,0,0,0,0,0,0"""
 
-# FILE 3: OUTLET PERFORMANCE (Staggered Data)
-csv_outlet_raw = """Central Region,Pass,Fail,Total Crew
+# --- INDIVIDUAL OUTLET DATA (By Region) ---
+csv_central = """Outlet,Pass,Fail,Total Crew
 AP,1,4,5
 EV,2,3,5
 MF,4,2,6
@@ -70,8 +70,9 @@ SWKLAA,1,2,3
 SWKLGC,1,3,4
 UP,0,5,5
 WW,2,4,6
-Total,48,84,132
-Nothern Region,Pass,Fail,Total Crew
+Total,48,84,132"""
+
+csv_northern = """Outlet,Pass,Fail,Total Crew
 AR,0,8,8
 KI,2,3,5
 TM,1,5,6
@@ -89,8 +90,9 @@ PG,5,2,7
 QB,6,9,15
 SQ,4,1,5
 SU,13,0,13
-Total,64,64,128
-Southern Region,Pass,Fail,Total Crew
+Total,64,64,128"""
+
+csv_southern = """Outlet,Pass,Fail,Total Crew
 BP,2,5,7
 JB,2,9,11
 KJ,0,7,7
@@ -108,8 +110,9 @@ SG,3,3,6
 SR,0,7,7
 SWNSLJ,1,3,4
 SWNSLT,0,3,3
-Total,33,70,103
-East Coast Region,Pass,Fail,Total Crew
+Total,33,70,103"""
+
+csv_east = """Outlet,Pass,Fail,Total Crew
 EC,4,3,7
 KT,3,1,4
 MM,3,0,3
@@ -119,8 +122,9 @@ SWTRGD,0,5,5
 SWTRMY,5,0,5
 KA,7,0,7
 KM,2,4,6
-Total,25,20,45
-Sabah Region,Pass,Fail,Total Crew
+Total,25,20,45"""
+
+csv_sabah = """Outlet,Pass,Fail,Total Crew
 HS,6,0,6
 IG,7,12,19
 PQ,2,5,7
@@ -130,8 +134,9 @@ SWSBCM,3,2,5
 SWSBKK,1,3,4
 TW,4,3,7
 SWLBFP,0,4,4
-Total,23,42,65
-Sarawak Region,Pass,Fail,Total Crew
+Total,23,42,65"""
+
+csv_sarawak = """Outlet,Pass,Fail,Total Crew
 CK,4,3,7
 MB,5,0,5
 MR,1,4,5
@@ -144,71 +149,55 @@ VC,6,4,10
 Total,33,27,60"""
 
 # -----------------------------------------------------------------------------
-# 3. DATA PROCESSING FUNCTIONS
+# 3. DATA PROCESSING
 # -----------------------------------------------------------------------------
 
 @st.cache_data
-def load_and_clean_data():
-    # --- 1. Regional Data ---
-    df_reg = pd.read_csv(io.StringIO(csv_regional_raw))
-    df_reg = df_reg[df_reg['Region'] != 'Total'] # Remove 'Total' row
-    df_reg['Region'] = df_reg['Region'].str.strip() # Clean "Sarawak " space
+def load_data():
+    # 1. Load Regional Summary
+    df_reg = pd.read_csv(io.StringIO(csv_regional))
+    df_reg = df_reg[df_reg['Region'] != 'Total']
+    df_reg['Region'] = df_reg['Region'].str.strip() # Fix "Sarawak " space
     
-    # --- 2. LOB Data ---
-    df_lob = pd.read_csv(io.StringIO(csv_lob_raw))
+    # 2. Load LOB Summary
+    df_lob = pd.read_csv(io.StringIO(csv_lob))
     df_lob = df_lob.rename(columns={'LOB': 'Result'})
     
-    # --- 3. Outlet Data (Complex Staggered Format) ---
-    raw_outlet_df = pd.read_csv(io.StringIO(csv_outlet_raw), header=None)
-    clean_outlets = []
-    
-    # Map of (Column Index, Region Name)
-    region_map = [
-        (0, 'Central'), (4, 'Northern'), (8, 'Southern'), 
-        (12, 'East Coast'), (16, 'Sabah'), (20, 'Sarawak')
+    # 3. Load Outlet Data (Combine all regions)
+    # Helper to load a single CSV string and tag it with a region
+    def read_outlet_csv(csv_str, region_name):
+        df = pd.read_csv(io.StringIO(csv_str))
+        df = df[df['Outlet'] != 'Total'] # Remove Total row
+        df['Region'] = region_name
+        return df
+
+    outlets = [
+        read_outlet_csv(csv_central, 'Central'),
+        read_outlet_csv(csv_northern, 'Northern'),
+        read_outlet_csv(csv_southern, 'Southern'),
+        read_outlet_csv(csv_east, 'East Coast'),
+        read_outlet_csv(csv_sabah, 'Sabah'),
+        read_outlet_csv(csv_sarawak, 'Sarawak')
     ]
     
-    for col_idx, region_name in region_map:
-        # Slice the 3 relevant columns
-        subset = raw_outlet_df.iloc[:, col_idx:col_idx+3].copy()
-        subset.columns = ['Outlet', 'Pass', 'Fail']
-        
-        # Cleaning
-        subset = subset.dropna(subset=['Outlet']) # Drop empty rows
-        subset = subset[~subset['Outlet'].str.contains('Total', case=False, na=False)] # Drop Total rows
-        subset = subset[~subset['Outlet'].str.contains('Region', case=False, na=False)] # Drop Header rows
-        
-        # Convert to numeric
-        subset['Pass'] = pd.to_numeric(subset['Pass'], errors='coerce')
-        subset['Fail'] = pd.to_numeric(subset['Fail'], errors='coerce')
-        subset = subset.dropna(subset=['Pass', 'Fail'])
-        
-        subset['Region'] = region_name
-        clean_outlets.append(subset)
-        
-    df_outlet_clean = pd.concat(clean_outlets, ignore_index=True)
+    df_outlet_all = pd.concat(outlets, ignore_index=True)
     
-    return df_reg, df_lob, df_outlet_clean
+    return df_reg, df_lob, df_outlet_all
 
 def process_lob_data(df):
-    # Remove Total column if exists
     cols = [c for c in df.columns if c != 'Total']
     df = df[cols]
-    
-    # Melt to long format
     df_long = df.melt(id_vars=['Result'], var_name='Region', value_name='Count')
     
-    # Parse Result string "Product (Status)"
     df_long['Status'] = df_long['Result'].apply(lambda x: 'Pass' if '(Pass)' in x else 'Fail')
     df_long['Product'] = df_long['Result'].apply(lambda x: x.split(' (')[0])
-    
     return df_long
 
-# Load datasets
-df_regional, df_lob, df_outlet = load_and_clean_data()
+# Load Data
+df_regional, df_lob, df_outlet = load_data()
 
 # -----------------------------------------------------------------------------
-# 4. SIDEBAR UI
+# 4. SIDEBAR
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.header("SSC 2026 Dashboard")
@@ -223,29 +212,24 @@ with st.sidebar:
     st.caption("© 2026 Insight Team")
 
 # -----------------------------------------------------------------------------
-# 5. MAIN PAGE LOGIC
+# 5. MAIN LOGIC
 # -----------------------------------------------------------------------------
 
 st.title(f"📊 {view_selection}")
 
-# Initialize variables
 active_df = pd.DataFrame()
 chart_fig = None
 total_pass = 0
 total_fail = 0
 total_vol = 0
 
-# --- DATA PREPARATION BASED ON SELECTION ---
-
 if view_selection == "Regional Performance":
     active_df = df_regional
     
-    # Metrics
     total_pass = active_df['Pass'].sum()
     total_fail = active_df['Fail'].sum()
     total_vol = active_df['Total Headcount'].sum()
     
-    # Chart
     chart_df = active_df.melt(id_vars=['Region'], value_vars=['Pass', 'Fail'], var_name='Status', value_name='Count')
     chart_fig = px.bar(chart_df, x='Region', y='Count', color='Status', barmode='group',
                        color_discrete_map={'Pass': '#00CC96', 'Fail': '#EF553B'}, 
@@ -254,27 +238,24 @@ if view_selection == "Regional Performance":
 elif view_selection == "Outlet Performance":
     active_df = df_outlet
     
-    # Filter Widget (Essential for Outlet view)
+    # Filter by Region
     regions_list = sorted(active_df['Region'].unique().tolist())
     selected_region = st.sidebar.multiselect("Filter by Region:", regions_list, default=regions_list[0])
     
-    # Apply Filter
     if selected_region:
         filtered_df = active_df[active_df['Region'].isin(selected_region)]
         title_text = f"Outlet Performance ({', '.join(selected_region)})"
     else:
         filtered_df = active_df
         title_text = "Outlet Performance (All)"
-        
-    # Metrics (Using ALL data, or filtered? Usually Dashboard metrics reflect the Filter)
-    # Let's make metrics reflect the filter for better interactivity
+    
+    # Update Metrics based on Filter
     total_pass = filtered_df['Pass'].sum()
     total_fail = filtered_df['Fail'].sum()
     total_vol = total_pass + total_fail
     
     # Chart
     chart_df = filtered_df.melt(id_vars=['Outlet'], value_vars=['Pass', 'Fail'], var_name='Status', value_name='Count')
-    # Sort by Count to make chart readable
     chart_df = chart_df.sort_values(by='Count', ascending=False)
     
     chart_fig = px.bar(chart_df, x='Outlet', y='Count', color='Status', barmode='group',
@@ -282,66 +263,57 @@ elif view_selection == "Outlet Performance":
                        title=title_text)
 
 elif view_selection == "LOB Comparison":
-    active_df = df_lob # For table display
+    active_df = df_lob
     processed_lob = process_lob_data(df_lob)
     
-    # Metrics
     total_pass = processed_lob[processed_lob['Status'] == 'Pass']['Count'].sum()
     total_fail = processed_lob[processed_lob['Status'] == 'Fail']['Count'].sum()
     total_vol = total_pass + total_fail
     
-    # Chart
     chart_fig = px.bar(processed_lob, x='Product', y='Count', color='Region',
-                       facet_row='Status', # Split charts by Pass/Fail
+                       facet_row='Status',
                        title="Product Performance: Regional Breakdown")
     chart_fig.update_layout(height=600)
 
-# Global Metric Calculation
 pass_rate = (total_pass / total_vol) * 100 if total_vol > 0 else 0
 
-
 # -----------------------------------------------------------------------------
-# 6. DASHBOARD DISPLAY LAYOUT
+# 6. LAYOUT
 # -----------------------------------------------------------------------------
 
-# --- ROW 1: KPIs ---
+# ROW 1: KPIs
 st.subheader("1. Key Performance Indicators")
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Total Volume", f"{int(total_vol)}")
-col2.metric("Total Pass", f"{int(total_pass)}")
-col3.metric("Total Fail", f"{int(total_fail)}")
-col4.metric("Pass Rate", f"{pass_rate:.1f}%")
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Total Volume", f"{int(total_vol)}")
+c2.metric("Total Pass", f"{int(total_pass)}")
+c3.metric("Total Fail", f"{int(total_fail)}")
+c4.metric("Pass Rate", f"{pass_rate:.1f}%")
 
 st.markdown("---")
 
-# --- ROW 2: VISUALIZATION ---
+# ROW 2: CHART
 st.subheader("2. Graphical Analysis")
 if chart_fig:
     st.plotly_chart(chart_fig, use_container_width=True)
 
 st.markdown("---")
 
-# --- ROW 3: DATA TABLE ---
+# ROW 3: TABLE
 st.subheader("3. Data Table")
 
-# Display logic: If Outlet or Region, calculate Pass Rate for the table
 display_df = active_df.copy()
 
-if view_selection == "Outlet Performance":
-    # Use the filtered DF for the table too
-    if selected_region:
-        display_df = filtered_df.copy()
+# If viewing outlets, show the filtered data in the table too
+if view_selection == "Outlet Performance" and 'filtered_df' in locals():
+    display_df = filtered_df.copy()
 
 if 'Pass' in display_df.columns and 'Fail' in display_df.columns:
     display_df['Calculated Total'] = display_df['Pass'] + display_df['Fail']
     display_df['Pass Rate (%)'] = (display_df['Pass'] / display_df['Calculated Total'] * 100).round(1)
     
-    # Move Pass Rate to front or significant position if desired, or just style it
     st.dataframe(
         display_df.style.background_gradient(cmap='RdYlGn', subset=['Pass Rate (%)'], vmin=0, vmax=100),
         use_container_width=True
     )
 else:
-    # For LOB or other formats
     st.dataframe(display_df, use_container_width=True)
