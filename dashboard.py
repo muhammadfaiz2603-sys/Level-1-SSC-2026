@@ -148,51 +148,6 @@ SY,1,5,6
 VC,6,4,10
 Total,33,27,60"""
 
-# -----------------------------------------------------------------------------
-# 3. DATA PROCESSING
-# -----------------------------------------------------------------------------
-
-@st.cache_data
-def load_data():
-    # 1. Load Regional Summary
-    df_reg = pd.read_csv(io.StringIO(csv_regional))
-    df_reg = df_reg[df_reg['Region'] != 'Total']
-    df_reg['Region'] = df_reg['Region'].str.strip() # Fix "Sarawak " space
-    
-    # 2. Load LOB Summary
-    df_lob = pd.read_csv(io.StringIO(csv_lob))
-    df_lob = df_lob.rename(columns={'LOB': 'Result'})
-    
-    # 3. Load Outlet Data (Combine all regions)
-    # Helper to load a single CSV string and tag it with a region
-    def read_outlet_csv(csv_str, region_name):
-        df = pd.read_csv(io.StringIO(csv_str))
-        df = df[df['Outlet'] != 'Total'] # Remove Total row
-        df['Region'] = region_name
-        return df
-
-    outlets = [
-        read_outlet_csv(csv_central, 'Central'),
-        read_outlet_csv(csv_northern, 'Northern'),
-        read_outlet_csv(csv_southern, 'Southern'),
-        read_outlet_csv(csv_east, 'East Coast'),
-        read_outlet_csv(csv_sabah, 'Sabah'),
-        read_outlet_csv(csv_sarawak, 'Sarawak')
-    ]
-    
-    df_outlet_all = pd.concat(outlets, ignore_index=True)
-    
-    return df_reg, df_lob, df_outlet_all
-
-def process_lob_data(df):
-    cols = [c for c in df.columns if c != 'Total']
-    df = df[cols]
-    df_long = df.melt(id_vars=['Result'], var_name='Region', value_name='Count')
-    
-    df_long['Status'] = df_long['Result'].apply(lambda x: 'Pass' if '(Pass)' in x else 'Fail')
-    df_long['Product'] = df_long['Result'].apply(lambda x: x.split(' (')[0])
-    return df_long
-
 # Load Data
 df_regional, df_lob, df_outlet = load_data()
 
