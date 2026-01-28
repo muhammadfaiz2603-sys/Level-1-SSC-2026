@@ -24,9 +24,6 @@ st.markdown("""
 # 2. DATA LOADING & CLEANING
 # -----------------------------------------------------------------------------
 
-# NOTE: In a real app, you would load these using pd.read_csv('filename.csv')
-# I have embedded your provided CSV content here so this script runs immediately for you.
-
 csv_regional_raw = """Region,Pass,Fail,Total Headcount
 Central,48,84,132
 Northern,64,64,128
@@ -146,47 +143,39 @@ Total,48,84,132,,,,,,,,,,,,,,,,,,,,
 
 @st.cache_data
 def load_data():
-    # 1. LOAD REGIONAL DATA
-    # If loading from file: df_reg = pd.read_csv('Region Performance Comparison.csv')
     df_reg = pd.read_csv(io.StringIO(csv_regional_raw))
-    df_reg = df_reg[df_reg['Region'] != 'Total'] # Remove Total row
-    df_reg['Region'] = df_reg['Region'].str.strip() # Remove spaces like "Sarawak "
+    df_reg = df_reg[df_reg['Region'] != 'Total'] 
+    df_reg['Region'] = df_reg['Region'].str.strip() 
     
-    # 2. LOAD LOB DATA
-    # If loading from file: df_lob = pd.read_csv('LOB Comparison.csv')
     df_lob = pd.read_csv(io.StringIO(csv_lob_raw))
-    # Rename 'LOB' to 'Result' to match existing logic
+   
     df_lob = df_lob.rename(columns={'LOB': 'Result'})
     
-    # 3. LOAD & CLEAN OUTLET DATA (The Tricky Part)
-    # The outlet data is staggered diagonally. We must extract it block by block.
     raw_outlet_df = pd.read_csv(io.StringIO(csv_outlet_raw), header=None)
     
     clean_outlets = []
     
-    # Define where each region's data starts (Column Index) and the Region Name
-    # Based on the CSV structure provided: Central(0), Northern(4), Southern(8), East Coast(12), Sabah(16), Sarawak(20)
     region_map = [
         (0, 'Central'), (4, 'Northern'), (8, 'Southern'), 
         (12, 'East Coast'), (16, 'Sabah'), (20, 'Sarawak')
     ]
     
     for col_idx, region_name in region_map:
-        # Extract the 3 columns: Name, Pass, Fail
+
         subset = raw_outlet_df.iloc[:, col_idx:col_idx+3].copy()
         subset.columns = ['Outlet', 'Pass', 'Fail']
         
-        # Clean up: Drop NaN, Drop "Total", Drop headers containing "Region"
+        
         subset = subset.dropna(subset=['Outlet'])
         subset = subset[~subset['Outlet'].str.contains('Total', case=False, na=False)]
         subset = subset[~subset['Outlet'].str.contains('Region', case=False, na=False)]
         
-        # Ensure numbers are numeric
+        
         subset['Pass'] = pd.to_numeric(subset['Pass'], errors='coerce')
         subset['Fail'] = pd.to_numeric(subset['Fail'], errors='coerce')
         
-        subset = subset.dropna(subset=['Pass', 'Fail']) # Remove rows where conversion failed
-        subset['Region'] = region_name # Tag the region
+        subset = subset.dropna(subset=['Pass', 'Fail']) 
+        subset['Region'] = region_name 
         
         clean_outlets.append(subset)
     
@@ -194,19 +183,18 @@ def load_data():
     
     return df_reg, df_lob, df_outlet_clean
 
-# Load the data
+
 df_regional, df_lob, df_outlet = load_data()
 
-# Helper function to process LOB data
+
 def process_lob_data(df):
-    # Filter out the "Total" column if it exists to avoid double counting
+    
     cols_to_keep = [c for c in df.columns if c != 'Total']
     df = df[cols_to_keep]
     
     df_long = df.melt(id_vars=['Result'], var_name='Region', value_name='Count')
     
-    # Extract "Product" and "Status"
-    # Example: "Apple Watch & iPhone (Pass)"
+    
     df_long['Status'] = df_long['Result'].apply(lambda x: 'Pass' if '(Pass)' in x else 'Fail')
     df_long['Product'] = df_long['Result'].apply(lambda x: x.split(' (')[0])
     
