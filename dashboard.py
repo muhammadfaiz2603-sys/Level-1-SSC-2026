@@ -139,8 +139,9 @@ df_lob = pd.DataFrame({
         'Mac (Fail)', 
         'Mac (Pass)'
     ],
+    'Central': [48, 84, 0, 0, 0, 0],
     'Sarawak': [27, 33, 0, 0, 0, 0],
-    'Sabah': [43, 23, 0, 0, 0, 0],
+    'Sabah': [42, 23, 0, 0, 0, 0],
     'East Coast': [20, 25, 0, 0, 0, 0],
     'Southern': [70, 33, 0, 0, 0, 0],
     'Northern': [64, 64, 0, 0, 0, 0]
